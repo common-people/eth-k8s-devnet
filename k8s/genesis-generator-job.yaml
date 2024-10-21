@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: genesis-generator-job
+  namespace: devnet
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: init
+          image: agj017/openssl-curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /data/execution && \
+              mkdir -p /data/consensus/beacondata && \
+              mkdir -p /data/consensus/validatordata && \
+              curl -o /data/consensus/config.yml https://raw.githubusercontent.com/common-people/eth-k8s-devnet/main/genesis-generator/config.yml && \
+              curl -o /data/execution/genesis.json https://raw.githubusercontent.com/common-people/eth-k8s-devnet/main/genesis-generator/genesis.json && \
+              openssl rand -hex 32 > /data/execution/jwtsecret
+          volumeMounts:
+            - name: peer-volume
+              mountPath: /data
+      containers:
+        - name: genesis-generator
+          image: gcr.io/prysmaticlabs/prysm/cmd/prysmctl
+          args:
+            - testnet
+            - generate-genesis
+            - --fork=capella
+            - --num-validators=64
+            - --genesis-time-delay=15
+            - --output-ssz=/data/consensus/genesis.ssz
+            - --chain-config-file=/data/consensus/config.yml
+            - --geth-genesis-json-in=/data/execution/genesis.json
+            - --geth-genesis-json-out=/data/execution/genesis.json
+          volumeMounts:
+            - name: peer-volume
+              mountPath: /data
+      restartPolicy: Never
+      volumes:
+        - name: peer-volume
+          persistentVolumeClaim:
+            claimName: peer-pvc

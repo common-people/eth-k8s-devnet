@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: devnet
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:latest
+      command: ["nginx", "-g", "daemon off;"]
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: peer-volume
+          mountPath: /data
+  volumes:
+    - name: peer-volume
+      persistentVolumeClaim:
+        claimName: peer-pvc
