@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prysm-beacon-svc
+  namespace: devnet
+spec:
+  type: ClusterIP
+  selector:
+    app: prysm-beacon
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000
+      name: rpc

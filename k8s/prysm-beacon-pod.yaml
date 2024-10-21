@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prysm-beacon-pod
+  namespace: devnet
+  labels:
+    app: prysm-beacon
+spec:
+  initContainers:
+    - name: init
+      image: busybox:latest
+      command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /data/execution/genesis.json ]; then echo 'Error: genesis.json not found!' && exit 1; fi
+          if [ ! -f /data/execution/jwtsecret ]; then echo 'Error: jwt.hex not found!' && exit 1; fi
+          if [ ! -f /data/consensus/config.yml ]; then echo 'Error: config.yml not found!' && exit 1; fi
+      volumeMounts:
+        - name: peer-volume
+          mountPath: /data
+  containers:
+    - name: prysm-cl
+      image: gcr.io/prysmaticlabs/prysm/beacon-chain:v4.1.1
+      imagePullPolicy: Always
+      args:
+        - --datadir=/data/consensus/beacondata
+        - --min-sync-peers=0
+        - --genesis-state=/data/consensus/genesis.ssz
+        - --bootstrap-node=
+        - --interop-eth1data-votes
+        - --chain-config-file=/data/consensus/config.yml
+        - --contract-deployment-block=0
+        - --rpc-host=0.0.0.0
+        - --grpc-gateway-host=0.0.0.0
+        - --execution-endpoint=http://geth-el-svc:8551
+        - --accept-terms-of-use
+        - --jwt-secret=/data/execution/jwtsecret
+        - --minimum-peers-per-subnet=0
+        - --enable-debug-rpc-endpoints
+        - --force-clear-db
+      ports:
+        - containerPort: 4000
+        - containerPort: 3500
+        - containerPort: 8080
+        - containerPort: 6060
+        - containerPort: 9090
+      volumeMounts:
+        - name: peer-volume
+          mountPath: /data
+  volumes:
+    - name: peer-volume
+      persistentVolumeClaim:
+        claimName: peer-pvc
