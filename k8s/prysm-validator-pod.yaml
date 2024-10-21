@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prysm-validator-pod
+  namespace: devnet
+  labels:
+    app: prysm-validator
+spec:
+  initContainers:
+    - name: init
+      image: busybox:latest
+      command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /data/consensus/config.yml ]; then echo 'Error: config.yml not found!' && exit 1; fi
+      volumeMounts:
+        - name: peer-volume
+          mountPath: /data
+  containers:
+    - name: prysm-validator
+      image: gcr.io/prysmaticlabs/prysm/validator:v4.1.1
+      imagePullPolicy: Always
+      args:
+        - --beacon-rpc-provider=prysm-beacon-svc:4000
+        - --datadir=/data/consensus/validatordata
+        - --accept-terms-of-use
+        - --interop-num-validators=64
+        - --interop-start-index=0
+        - --chain-config-file=/data/consensus/config.yml
+        - --force-clear-db
+      volumeMounts:
+        - name: peer-volume
+          mountPath: /data
+  volumes:
+    - name: peer-volume
+      persistentVolumeClaim:
+        claimName: peer-pvc
