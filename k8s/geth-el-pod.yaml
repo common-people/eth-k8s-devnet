@@ -32,6 +32,7 @@ spec:
           --http.api=eth,net,web3 \
           --http.addr=0.0.0.0 \
           --http.corsdomain=* \
+          --http.vhosts=* \
           --ws \
           --ws.api=eth,net,web3 \
           --ws.addr=0.0.0.0 \
@@ -40,8 +41,9 @@ spec:
           --authrpc.addr=0.0.0.0 \
           --authrpc.jwtsecret=/data/execution/jwtsecret \
           --allow-insecure-unlock \
-          --nodiscover
-          --syncmode=full
+          --nodiscover \
+          --syncmode=full \
+          --verbosity=4
       ports:
         - containerPort: 32000
         - containerPort: 8551
